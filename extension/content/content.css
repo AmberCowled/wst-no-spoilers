@@ -10,3 +10,11 @@ html[data-wst-ns='on'] .wst-ns-mask-inline {
   user-select: none !important;
   pointer-events: none;
 }
+
+/* #6 — Equalize winner/loser visual indicators so they look identical */
+html[data-wst-ns='on'] .wst-ns-equalize {
+  opacity: 1 !important;
+  font-weight: normal !important;
+  color: inherit !important;
+  border-color: transparent !important;
+}

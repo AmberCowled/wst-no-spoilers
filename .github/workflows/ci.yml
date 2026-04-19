@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      - name: Lint
+        run: npx eslint extension/
+
+      - name: Test
+        run: npm test
+
+      - name: Validate manifest
+        run: node -e "const m = require('./extension/manifest.json'); if (m.manifest_version !== 3) process.exit(1); console.log('Manifest V3 valid:', m.name, m.version);"
