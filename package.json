@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "wst-no-spoilers",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Browser extension to reduce spoilers on wst.tv",
   "scripts": {
     "test": "node --test --test-name-pattern=. test/content.test.js",

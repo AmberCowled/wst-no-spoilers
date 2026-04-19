@@ -15,6 +15,7 @@ module.exports = [
         NodeFilter: 'readonly',
         MutationObserver: 'readonly',
         HTMLElement: 'readonly',
+        location: 'readonly',
         setTimeout: 'readonly',
         requestAnimationFrame: 'readonly',
         cancelAnimationFrame: 'readonly',

@@ -10,7 +10,13 @@
       "WebSearch",
       "WebFetch(domain:scores.wst.tv)",
       "WebFetch(domain:web.archive.org)",
-      "WebFetch(domain:webcache.googleusercontent.com)"
+      "WebFetch(domain:webcache.googleusercontent.com)",
+      "WebFetch(domain:api.wst.tv)",
+      "Bash(ls:*)",
+      "WebFetch(domain:www.snookerisland.com)",
+      "WebFetch(domain:www.similarweb.com)",
+      "Bash(rm:*)",
+      "Bash(mv:*)"
     ]
   }
 }

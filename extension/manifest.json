@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WST No-Spoilers",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Reduce accidental spoilers by masking scores and win/loss cues on wst.tv pages.",
   "permissions": ["storage", "tabs"],
   "host_permissions": ["https://*.wst.tv/*"],
