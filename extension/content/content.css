@@ -19,11 +19,12 @@ html[data-wst-ns='on'] .wst-ns-equalize {
   border-color: transparent !important;
 }
 
-/* N6 — News items are clickable to reveal (scores stay non-interactive) */
+/* N6/T1 — Revealable items are clickable (scores stay non-interactive) */
 html[data-wst-ns='on'] .article-card.wst-ns-mask,
 html[data-wst-ns='on'] .article-card .wst-ns-mask,
 html[data-wst-ns='on'] .news-hero .wst-ns-mask,
-html[data-wst-ns='on'] [data-wst-news-masked] {
+html[data-wst-ns='on'] [data-wst-news-masked],
+html[data-wst-ns='on'] a.match.wst-ns-mask {
   pointer-events: auto;
   cursor: pointer;
 }
