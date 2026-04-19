@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WST No-Spoilers</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <header class="header">
+        <img
+          class="logo"
+          src="../icons/icon32.png"
+          srcset="../icons/icon48.png 2x"
+          width="32"
+          height="32"
+          alt=""
+          decoding="async"
+        />
+        <div class="titles">
+          <h1 class="name">WST No-Spoilers</h1>
+          <p class="tagline">Fewer spoilers on wst.tv</p>
+        </div>
+      </header>
+
+      <label class="toggle-row">
+        <input type="checkbox" id="enabled" />
+        <span class="toggle-ui" aria-hidden="true"></span>
+        <span class="toggle-label" id="toggleLabel">Spoiler protection</span>
+      </label>
+
+      <p class="hint" id="hint">
+        Reload any open wst.tv tabs after changing this if results look stale.
+      </p>
+
+      <a class="link" href="https://www.wst.tv/" target="_blank" rel="noreferrer">Open wst.tv</a>
+    </main>
+    <script src="popup.js" defer></script>
+  </body>
+</html>

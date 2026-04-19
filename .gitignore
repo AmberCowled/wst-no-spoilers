@@ -1,0 +1,15 @@
+# Archives / packaging
+*.zip
+*.crx
+*.pem
+web-ext-artifacts/
+dist/
+release/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+
+# Optional Node tooling if added later
+node_modules/

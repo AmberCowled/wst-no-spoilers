@@ -1,0 +1,12 @@
+/**
+ * Applied when spoiler protection is active (see content.js).
+ * Uses blur so layout stays stable; avoids replacing DOM text (breaks hydration less).
+ */
+
+html[data-wst-ns='on'] .wst-ns-mask,
+html[data-wst-ns='on'] .wst-ns-mask-inline {
+  filter: blur(14px) !important;
+  -webkit-filter: blur(14px) !important;
+  user-select: none !important;
+  pointer-events: none;
+}
