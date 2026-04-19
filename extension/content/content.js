@@ -112,15 +112,33 @@ const MASK_RULES = [
 		selector: "[class*='session-score'], [class*='session'] .score",
 		mode: "digits",
 	},
+
+	// N1/N2/N3 — Blur entire news card (headline, snippet, image in one go)
+	{
+		name: "newsCard",
+		selector: ".article-card",
+		mode: "full",
+	},
 ];
 
 /**
  * HELPERS
  */
 
+/** N6 — Selectors for news containers where click-to-reveal is allowed */
+const NEWS_CONTAINERS =
+	".article-card, .news-hero, .article-body, .article-content, [class*='article']";
+
+function isNewsElement(el) {
+	if (!el || el.nodeType !== Node.ELEMENT_NODE) return false;
+	return el.closest(NEWS_CONTAINERS) !== null;
+}
+
 function applyMaskToNode(el) {
 	if (!el || el.nodeType !== Node.ELEMENT_NODE) return;
 	if (el.classList.contains("wst-ns-mask")) return;
+	// N6 — Skip elements the user has already revealed
+	if (el.hasAttribute("data-wst-revealed")) return;
 	el.classList.add("wst-ns-mask");
 }
 
@@ -401,17 +419,31 @@ function maskStatusBadges(root) {
 }
 
 /**
- * #10 — DOCUMENT TITLE MASKING
- * Replaces score patterns in <title> with "? - ?" to prevent spoilers.
+ * DOCUMENT TITLE MASKING
+ * N5 — On /news/ pages, replaces the headline portion with "Article".
+ * #10 — On other pages, replaces numeric score patterns with "? - ?".
  */
 function maskDocumentTitle() {
 	const title = document.title;
-	if (!title || !TITLE_SCORE_PATTERN.test(title)) return;
-	if (savedDocumentTitle === null) {
-		savedDocumentTitle = title;
+	if (!title) return;
+	if (savedDocumentTitle !== null) return;
+
+	// N5 — News page: mask the entire headline before the site suffix
+	if (/^\/news\b/.test(location.pathname)) {
+		const suffixIndex = title.lastIndexOf(" - ");
+		if (suffixIndex > 0) {
+			savedDocumentTitle = title;
+			document.title = "Article" + title.slice(suffixIndex);
+			return;
+		}
 	}
-	TITLE_SCORE_PATTERN.lastIndex = 0;
-	document.title = title.replace(TITLE_SCORE_PATTERN, "? - ?");
+
+	// #10 — All pages: mask numeric score patterns
+	if (TITLE_SCORE_PATTERN.test(title)) {
+		savedDocumentTitle = title;
+		TITLE_SCORE_PATTERN.lastIndex = 0;
+		document.title = title.replace(TITLE_SCORE_PATTERN, "? - ?");
+	}
 }
 
 function restoreDocumentTitle() {
@@ -419,6 +451,68 @@ function restoreDocumentTitle() {
 		document.title = savedDocumentTitle;
 		savedDocumentTitle = null;
 	}
+}
+
+/**
+ * N4 — ARTICLE BODY MASKING
+ * On /news/ pages, blurs the article body and injects a reveal button.
+ */
+const ARTICLE_BODY_SELECTOR =
+	".article-body, .article-content, [class*='article'] > .prose";
+
+function maskArticleBody() {
+	if (!/^\/news\b/.test(location.pathname)) return;
+
+	const bodies = document.querySelectorAll(ARTICLE_BODY_SELECTOR);
+	for (const body of bodies) {
+		if (body.hasAttribute("data-wst-news-masked")) continue;
+		if (body.hasAttribute("data-wst-revealed")) continue;
+
+		body.setAttribute("data-wst-news-masked", "true");
+		body.classList.add("wst-ns-mask");
+
+		// Inject reveal button before the body
+		const btn = document.createElement("button");
+		btn.className = "wst-ns-reveal-btn";
+		btn.textContent = "Show article (may contain spoilers)";
+		btn.addEventListener("click", () => {
+			body.classList.remove("wst-ns-mask");
+			body.setAttribute("data-wst-revealed", "true");
+			btn.remove();
+		});
+		body.parentNode?.insertBefore(btn, body);
+	}
+}
+
+/**
+ * N6 — CLICK-TO-REVEAL HANDLER
+ * Delegated click listener for news-masked elements.
+ * Scores keep pointer-events:none and are not affected.
+ */
+let revealHandlerAttached = false;
+
+function handleRevealClick(e) {
+	const masked = e.target.closest(".wst-ns-mask");
+	if (!masked) return;
+	if (!isNewsElement(masked)) return;
+
+	// Prevent navigation — let the user read first, click again to navigate
+	e.preventDefault();
+	e.stopPropagation();
+
+	masked.classList.remove("wst-ns-mask");
+	masked.setAttribute("data-wst-revealed", "true");
+}
+
+function attachRevealHandler() {
+	if (revealHandlerAttached) return;
+	document.body?.addEventListener("click", handleRevealClick, true);
+	revealHandlerAttached = true;
+}
+
+function detachRevealHandler() {
+	document.body?.removeEventListener("click", handleRevealClick, true);
+	revealHandlerAttached = false;
 }
 
 /**
@@ -522,6 +616,17 @@ function clearMasks() {
 	clearInlineMasks();
 	// #10 — Restore original document title
 	restoreDocumentTitle();
+	// N6 — Clear all revealed state
+	document.querySelectorAll("[data-wst-revealed]").forEach((el) => {
+		el.removeAttribute("data-wst-revealed");
+	});
+	// N4 — Remove reveal buttons and article body masking markers
+	document.querySelectorAll(".wst-ns-reveal-btn").forEach((btn) => {
+		btn.remove();
+	});
+	document.querySelectorAll("[data-wst-news-masked]").forEach((el) => {
+		el.removeAttribute("data-wst-news-masked");
+	});
 }
 
 function setDocumentState(enabled) {
@@ -539,6 +644,7 @@ function safeInitialScan() {
 
 	scanWithRules(document.body);
 	maskDocumentTitle();
+	maskArticleBody();
 
 	SCAN_DELAYS.forEach((delay, i) => {
 		setTimeout(() => {
@@ -550,6 +656,7 @@ function safeInitialScan() {
 			}
 
 			maskDocumentTitle();
+			maskArticleBody();
 
 			// On the final pass, run diagnostics and heuristic fallback
 			if (i === SCAN_DELAYS.length - 1) {
@@ -599,6 +706,8 @@ function flushPendingScans() {
 
 	// #10 — Check document title on each flush
 	maskDocumentTitle();
+	// N4 — Check for article body on each flush
+	maskArticleBody();
 }
 
 function scheduleFlush() {
@@ -664,6 +773,7 @@ function disconnectObserver() {
 
 async function refreshMasking(enabled) {
 	disconnectObserver();
+	detachRevealHandler();
 	clearMasks();
 	setDocumentState(enabled);
 
@@ -671,6 +781,7 @@ async function refreshMasking(enabled) {
 
 	safeInitialScan();
 	attachObserver();
+	attachRevealHandler();
 }
 
 async function init() {

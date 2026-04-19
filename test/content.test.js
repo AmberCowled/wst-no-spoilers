@@ -559,3 +559,214 @@ describe('logDiagnostics (#13)', () => {
     );
   });
 });
+
+// ─── N1–N6 NEWS SPOILER PREVENTION ─────────────────────────────────────────
+
+describe('news card masking (N1/N2/N3)', () => {
+  let env;
+  beforeEach(() => { env = createEnv(); });
+
+  it('should mask .article-card elements', () => {
+    const { document, window } = env;
+    const card = document.createElement('div');
+    card.className = 'article-card';
+    card.textContent = 'Trump Beats Robertson To Reach Final';
+    document.body.appendChild(card);
+
+    window.eval('scanWithRules(document.body)');
+
+    assert.equal(card.classList.contains('wst-ns-mask'), true);
+  });
+});
+
+describe('article title masking (N5)', () => {
+  let env;
+
+  it('should replace news page title with generic text', () => {
+    // Create env with /news/ URL path
+    const dom = new JSDOM('<!DOCTYPE html><html data-wst-ns="on"><body></body></html>', {
+      runScripts: 'dangerously',
+      url: 'https://www.wst.tv/news/2026/april/20/trump-wins-thriller/',
+    });
+    const { window } = dom;
+    window.CSS = { escape: (s) => s.replace(/([^\w-])/g, '\\$1') };
+    window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+    window.cancelAnimationFrame = (id) => clearTimeout(id);
+    window.chrome = { storage: { sync: { get: async () => ({}) }, onChanged: { addListener: () => {} } } };
+    window.eval(CONSTANTS_SRC);
+    window.eval(CONTENT_SRC);
+
+    dom.window.document.title = 'Trump Wins Murphy Thriller - World Snooker Tour';
+    window.eval('maskDocumentTitle()');
+
+    assert.equal(dom.window.document.title, 'Article - World Snooker Tour');
+  });
+
+  it('should still use numeric pattern on non-news pages', () => {
+    const { document, window } = env = createEnv();
+    document.title = 'Player A 5 - 3 Player B';
+
+    window.eval('maskDocumentTitle()');
+
+    assert.equal(document.title, 'Player A ? - ? Player B');
+  });
+});
+
+describe('click-to-reveal (N6)', () => {
+  let env;
+  beforeEach(() => { env = createEnv(); });
+
+  it('should reveal news element on click and set data-wst-revealed', () => {
+    const { document, window } = env;
+    const card = document.createElement('div');
+    card.className = 'article-card';
+    const wrap = document.createElement('div');
+    wrap.className = 'article-card__wrap wst-ns-mask';
+    wrap.textContent = 'Spoiler Headline';
+    card.appendChild(wrap);
+    document.body.appendChild(card);
+
+    // Simulate click via the handler function directly
+    window.eval('handleRevealClick({ target: document.querySelector(".article-card__wrap"), preventDefault: function(){}, stopPropagation: function(){} })');
+
+    assert.equal(wrap.classList.contains('wst-ns-mask'), false);
+    assert.equal(wrap.getAttribute('data-wst-revealed'), 'true');
+  });
+
+  it('should NOT reveal score elements on click', () => {
+    const { document, window } = env;
+    const p = document.createElement('p');
+    p.className = 'w-6 text-center text-clear font-primary wst-ns-mask';
+    document.body.appendChild(p);
+
+    window.eval('handleRevealClick({ target: document.querySelector("p.w-6"), preventDefault: function(){}, stopPropagation: function(){} })');
+
+    // Score should still be masked (not inside a news container)
+    assert.equal(p.classList.contains('wst-ns-mask'), true);
+  });
+
+  it('should skip revealed elements on re-scan', () => {
+    const { document, window } = env;
+    const card = document.createElement('div');
+    card.className = 'article-card';
+    const wrap = document.createElement('div');
+    wrap.className = 'article-card__wrap';
+    wrap.setAttribute('data-wst-revealed', 'true');
+    wrap.textContent = 'Revealed Headline';
+    card.appendChild(wrap);
+    document.body.appendChild(card);
+
+    window.eval('scanWithRules(document.body)');
+
+    // Should NOT be re-masked because data-wst-revealed is set
+    assert.equal(wrap.classList.contains('wst-ns-mask'), false);
+  });
+
+  it('should clear data-wst-revealed on clearMasks', () => {
+    const { document, window } = env;
+    const el = document.createElement('div');
+    el.setAttribute('data-wst-revealed', 'true');
+    document.body.appendChild(el);
+
+    window.eval('clearMasks()');
+
+    assert.equal(el.hasAttribute('data-wst-revealed'), false);
+  });
+});
+
+describe('article body masking (N4)', () => {
+  it('should mask article body on /news/ pages', () => {
+    const dom = new JSDOM('<!DOCTYPE html><html data-wst-ns="on"><body></body></html>', {
+      runScripts: 'dangerously',
+      url: 'https://www.wst.tv/news/2026/april/20/some-article/',
+    });
+    const { window } = dom;
+    window.CSS = { escape: (s) => s.replace(/([^\w-])/g, '\\$1') };
+    window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+    window.cancelAnimationFrame = (id) => clearTimeout(id);
+    window.chrome = { storage: { sync: { get: async () => ({}) }, onChanged: { addListener: () => {} } } };
+    window.eval(CONSTANTS_SRC);
+    window.eval(CONTENT_SRC);
+
+    const body = dom.window.document.createElement('div');
+    body.className = 'article-body';
+    body.textContent = 'Match report content here...';
+    dom.window.document.body.appendChild(body);
+
+    window.eval('maskArticleBody()');
+
+    assert.equal(body.classList.contains('wst-ns-mask'), true);
+    assert.equal(body.getAttribute('data-wst-news-masked'), 'true');
+
+    const btn = dom.window.document.querySelector('.wst-ns-reveal-btn');
+    assert.ok(btn, 'reveal button should be injected');
+    assert.equal(btn.textContent, 'Show article (may contain spoilers)');
+  });
+
+  it('should reveal body when button is clicked', () => {
+    const dom = new JSDOM('<!DOCTYPE html><html data-wst-ns="on"><body></body></html>', {
+      runScripts: 'dangerously',
+      url: 'https://www.wst.tv/news/2026/april/20/some-article/',
+    });
+    const { window } = dom;
+    window.CSS = { escape: (s) => s.replace(/([^\w-])/g, '\\$1') };
+    window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+    window.cancelAnimationFrame = (id) => clearTimeout(id);
+    window.chrome = { storage: { sync: { get: async () => ({}) }, onChanged: { addListener: () => {} } } };
+    window.eval(CONSTANTS_SRC);
+    window.eval(CONTENT_SRC);
+
+    const body = dom.window.document.createElement('div');
+    body.className = 'article-body';
+    body.textContent = 'Match report content here...';
+    dom.window.document.body.appendChild(body);
+
+    window.eval('maskArticleBody()');
+
+    const btn = dom.window.document.querySelector('.wst-ns-reveal-btn');
+    btn.click();
+
+    assert.equal(body.classList.contains('wst-ns-mask'), false);
+    assert.equal(body.getAttribute('data-wst-revealed'), 'true');
+    assert.equal(dom.window.document.querySelector('.wst-ns-reveal-btn'), null, 'button should be removed');
+  });
+
+  it('should not mask article body on non-news pages', () => {
+    const env = createEnv();
+    const { document, window } = env;
+    const body = document.createElement('div');
+    body.className = 'article-body';
+    document.body.appendChild(body);
+
+    window.eval('maskArticleBody()');
+
+    assert.equal(body.classList.contains('wst-ns-mask'), false);
+  });
+});
+
+describe('isNewsElement (N6)', () => {
+  let env;
+  beforeEach(() => { env = createEnv(); });
+
+  it('should return true for elements inside .article-card', () => {
+    const { document, window } = env;
+    const card = document.createElement('div');
+    card.className = 'article-card';
+    const title = document.createElement('h3');
+    card.appendChild(title);
+    document.body.appendChild(card);
+
+    const result = window.eval('isNewsElement(document.querySelector("h3"))');
+    assert.equal(result, true);
+  });
+
+  it('should return false for score elements outside news containers', () => {
+    const { document, window } = env;
+    const p = document.createElement('p');
+    p.className = 'w-6 text-center';
+    document.body.appendChild(p);
+
+    const result = window.eval('isNewsElement(document.querySelector("p"))');
+    assert.equal(result, false);
+  });
+});

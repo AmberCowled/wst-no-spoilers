@@ -10,8 +10,8 @@ Thanks for helping improve WST No-Spoilers.
 
 ## Working on masking rules
 
-- Primary logic lives in `extension/content/content.js` (`MATCHES_SCORE_MASK_SELECTOR`, `DRAW_SCORE_MASK_SELECTOR`) and `extension/content/content.css`.
-- The masks target specific `wst.tv` markup; if the site’s classes change, update those constants and note what you tested.
+- Primary logic lives in `extension/content/content.js` (the `MASK_RULES` array) and `extension/content/content.css`.
+- The masks target specific `wst.tv` markup; if the site’s classes change, update the selectors in `MASK_RULES` and bump the `// verified` date.
 - Test with spoiler protection **on** and **off** using the extension popup.
 - If blur hides too much UI, narrow the selector or scope it with a more specific parent selector before adding new rules.
 
