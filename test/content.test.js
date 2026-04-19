@@ -744,7 +744,7 @@ describe('article body masking (N4)', () => {
   });
 });
 
-describe('isNewsElement (N6)', () => {
+describe('isRevealableElement (N6/T1)', () => {
   let env;
   beforeEach(() => { env = createEnv(); });
 
@@ -756,7 +756,7 @@ describe('isNewsElement (N6)', () => {
     card.appendChild(title);
     document.body.appendChild(card);
 
-    const result = window.eval('isNewsElement(document.querySelector("h3"))');
+    const result = window.eval('isRevealableElement(document.querySelector("h3"))');
     assert.equal(result, true);
   });
 
@@ -766,7 +766,100 @@ describe('isNewsElement (N6)', () => {
     p.className = 'w-6 text-center';
     document.body.appendChild(p);
 
-    const result = window.eval('isNewsElement(document.querySelector("p"))');
+    const result = window.eval('isRevealableElement(document.querySelector("p"))');
     assert.equal(result, false);
+  });
+
+  it('should return true for a.match elements', () => {
+    const { document, window } = env;
+    const a = document.createElement('a');
+    a.className = 'match';
+    document.body.appendChild(a);
+
+    const result = window.eval('isRevealableElement(document.querySelector("a.match"))');
+    assert.equal(result, true);
+  });
+});
+
+describe('draw match masking (T1)', () => {
+  let env;
+  beforeEach(() => { env = createEnv(); });
+
+  it('should mask a.match elements', () => {
+    const { document, window } = env;
+    const a = document.createElement('a');
+    a.className = 'match';
+    a.textContent = 'Player A vs Player B';
+    document.body.appendChild(a);
+
+    window.eval('scanWithRules(document.body)');
+
+    assert.equal(a.classList.contains('wst-ns-mask'), true);
+  });
+
+  it('should reveal match on click and prevent navigation', () => {
+    const { document, window } = env;
+    const a = document.createElement('a');
+    a.className = 'match wst-ns-mask';
+    a.href = '/match/123';
+    a.textContent = 'Player A vs Player B';
+    document.body.appendChild(a);
+
+    let defaultPrevented = false;
+    let propagationStopped = false;
+    window.eval(`handleRevealClick({
+      target: document.querySelector("a.match"),
+      preventDefault: function() { this._pd = true; },
+      stopPropagation: function() { this._sp = true; }
+    })`);
+
+    assert.equal(a.classList.contains('wst-ns-mask'), false);
+    assert.equal(a.getAttribute('data-wst-revealed'), 'true');
+  });
+
+  it('should clear inline masks within revealed match', () => {
+    const { document, window } = env;
+    const a = document.createElement('a');
+    a.className = 'match wst-ns-mask';
+    const span = document.createElement('span');
+    span.className = 'wst-ns-mask-inline';
+    span.textContent = '7';
+    a.appendChild(document.createTextNode('Score: '));
+    a.appendChild(span);
+    document.body.appendChild(a);
+
+    window.eval('handleRevealClick({ target: document.querySelector("a.match"), preventDefault: function(){}, stopPropagation: function(){} })');
+
+    assert.equal(a.querySelectorAll('.wst-ns-mask-inline').length, 0, 'inline masks should be cleared');
+    assert.ok(a.textContent.includes('7'), 'score text should remain visible');
+  });
+
+  it('should not re-mask revealed match on rescan', () => {
+    const { document, window } = env;
+    const a = document.createElement('a');
+    a.className = 'match';
+    a.setAttribute('data-wst-revealed', 'true');
+    a.textContent = 'Player A vs Player B';
+    document.body.appendChild(a);
+
+    window.eval('scanWithRules(document.body)');
+
+    assert.equal(a.classList.contains('wst-ns-mask'), false, 'should not be re-masked');
+  });
+
+  it('should not re-mask score digits inside revealed match', () => {
+    const { document, window } = env;
+    const a = document.createElement('a');
+    a.className = 'match';
+    a.setAttribute('data-wst-revealed', 'true');
+    const scoreEl = document.createElement('span');
+    scoreEl.className = 'text-clear text-\\[14px\\]';
+    scoreEl.textContent = '7';
+    a.appendChild(scoreEl);
+    document.body.appendChild(a);
+
+    window.eval('scanWithRules(document.body)');
+
+    assert.equal(a.querySelectorAll('.wst-ns-mask-inline').length, 0, 'score digits inside revealed match should not be masked');
   });
 });

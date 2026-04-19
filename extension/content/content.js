@@ -119,19 +119,26 @@ const MASK_RULES = [
 		selector: ".article-card",
 		mode: "full",
 	},
+
+	// T1 — Blur draw bracket matches (click to reveal individual matches)
+	{
+		name: "drawMatch",
+		selector: "a.match",
+		mode: "full",
+	},
 ];
 
 /**
  * HELPERS
  */
 
-/** N6 — Selectors for news containers where click-to-reveal is allowed */
-const NEWS_CONTAINERS =
-	".article-card, .news-hero, .article-body, .article-content, [class*='article']";
+/** N6/T1 — Selectors for containers where click-to-reveal is allowed */
+const REVEALABLE_CONTAINERS =
+	".article-card, .news-hero, .article-body, .article-content, [class*='article'], a.match";
 
-function isNewsElement(el) {
+function isRevealableElement(el) {
 	if (!el || el.nodeType !== Node.ELEMENT_NODE) return false;
-	return el.closest(NEWS_CONTAINERS) !== null;
+	return el.closest(REVEALABLE_CONTAINERS) !== null;
 }
 
 function applyMaskToNode(el) {
@@ -300,6 +307,8 @@ function processElementWithRule(el, rule) {
 	if (rule.exactClass && el.className?.trim() !== rule.exactClass) return;
 	if (rule.classMatch && !hasAllClasses(el, rule.classMatch)) return;
 	if (rule.condition && !rule.condition(el)) return;
+	// T1 — Skip elements inside a revealed container
+	if (el.closest("[data-wst-revealed]")) return;
 
 	if (rule.mode === "full") {
 		applyMaskToNode(el);
@@ -494,7 +503,7 @@ let revealHandlerAttached = false;
 function handleRevealClick(e) {
 	const masked = e.target.closest(".wst-ns-mask");
 	if (!masked) return;
-	if (!isNewsElement(masked)) return;
+	if (!isRevealableElement(masked)) return;
 
 	// Prevent navigation — let the user read first, click again to navigate
 	e.preventDefault();
@@ -502,6 +511,14 @@ function handleRevealClick(e) {
 
 	masked.classList.remove("wst-ns-mask");
 	masked.setAttribute("data-wst-revealed", "true");
+
+	// T1 — Clear inline masks within the revealed element
+	masked.querySelectorAll(".wst-ns-mask-inline").forEach((span) => {
+		const parent = span.parentNode;
+		while (span.firstChild) parent.insertBefore(span.firstChild, span);
+		parent.removeChild(span);
+		parent.normalize();
+	});
 }
 
 function attachRevealHandler() {
