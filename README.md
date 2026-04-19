@@ -16,7 +16,7 @@ Extension icons are PNGs under `extension/icons/`; filenames and sizes must stay
 ## Usage
 
 - Use the toolbar icon to turn **spoiler protection** on or off. The setting is synced with your browser profile when you are signed in (via `chrome.storage.sync`).
-- When protection is **on**, the extension blurs match rows via `MATCHES_SCORE_MASK_SELECTOR`, and blurs only digit runs inside elements matched by `DRAW_SCORE_MASK_SELECTOR` (see `extension/content/content.js`). If the site’s markup changes and masking breaks, open an issue or submit a PR to adjust those selectors.
+- When protection is **on**, the extension applies blur masks to elements matched by the `MASK_RULES` array in `extension/content/content.js`. Each rule targets specific score or result elements using one of three modes: full-element blur, digit-only blur, or character-level blur. If the site’s markup changes and masking breaks, open an issue or submit a PR to adjust the selectors in `MASK_RULES`.
 
 ## Contributing
 

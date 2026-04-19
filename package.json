@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "name": "wst-no-spoilers",
+  "version": "0.1.1",
+  "description": "Browser extension to reduce spoilers on wst.tv",
+  "scripts": {
+    "test": "node --test --test-name-pattern=. test/content.test.js",
+    "lint": "eslint extension/",
+    "package": "node scripts/package.js"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0",
+    "eslint": "^9.0.0"
+  }
+}

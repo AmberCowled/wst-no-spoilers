@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(npm install:*)",
+      "Bash(npm test:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm run:*)",
+      "WebFetch(domain:www.wst.tv)",
+      "WebSearch",
+      "WebFetch(domain:scores.wst.tv)",
+      "WebFetch(domain:web.archive.org)",
+      "WebFetch(domain:webcache.googleusercontent.com)"
+    ]
+  }
+}

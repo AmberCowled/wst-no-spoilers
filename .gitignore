@@ -6,6 +6,10 @@ web-ext-artifacts/
 dist/
 release/
 
+# Audit / reports
+AUDIT.md
+SITE_ANALYSIS_REPORT.md
+
 # OS / editor
 .DS_Store
 Thumbs.db

@@ -128,3 +128,31 @@ body {
 .link:hover {
   text-decoration: underline;
 }
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #6b6b6b;
+    --accent: #9a7a1a;
+    --border: #d4d4d4;
+  }
+
+  .logo {
+    background: #f0f0f0;
+  }
+
+  .toggle-ui {
+    background: #cccccc;
+    border-color: var(--border);
+  }
+
+  .toggle-ui::after {
+    background: #ffffff;
+  }
+
+  .toggle-row input:checked + .toggle-ui {
+    background: #3d8b3d;
+    border-color: #2f6b2f;
+  }
+}

@@ -1,15 +1,21 @@
 {
   "manifest_version": 3,
   "name": "WST No-Spoilers",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Reduce accidental spoilers by masking scores and win/loss cues on wst.tv pages.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "tabs"],
   "host_permissions": ["https://*.wst.tv/*"],
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "background": {
+    "service_worker": "background.js"
   },
   "action": {
     "default_popup": "popup/popup.html",
@@ -21,10 +27,18 @@
       "128": "icons/icon128.png"
     }
   },
+  "commands": {
+    "toggle-protection": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "Toggle spoiler protection on/off"
+    }
+  },
   "content_scripts": [
     {
       "matches": ["https://*.wst.tv/*"],
-      "js": ["content/content.js"],
+      "js": ["constants.js", "content/content.js"],
       "css": ["content/content.css"],
       "run_at": "document_idle"
     }
